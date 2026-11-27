@@ -1,0 +1,1 @@
+CREATE TABLE IF NOT EXISTS atelier_inventory_movements (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), product_id UUID REFERENCES atelier_products(id), sku TEXT NOT NULL, variant TEXT, quantity_change INTEGER NOT NULL, reason TEXT, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
