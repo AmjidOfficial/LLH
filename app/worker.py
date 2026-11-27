@@ -2,6 +2,7 @@ import json
 import logging
 import time
 from io import BytesIO
+from threading import Event, Thread
 from PIL import Image, UnidentifiedImageError
 from redis import Redis
 from app.config import get_settings
@@ -31,37 +32,49 @@ def run() -> None:
     runtime = VtonRuntime()
     runtime.load()
     storage = PrivateObjectStorage()
-    log.info("LLH worker ready")
-    while True:
-        item = redis.brpop("llh:jobs", timeout=5)
-        if item is None:
-            continue
-        _, job_id = item
-        key = f"llh:job:{job_id}"
-        raw = redis.get(key)
-        if not raw:
-            continue
-        record = json.loads(raw)
-        try:
-            record["status"] = "running"
-            redis.set(key, json.dumps(record), keepttl=True)
-            person = storage.read(record["input_object_key"])
-            garment = storage.read(record["garment_object_key"])
-            validate_image(person)
-            validate_image(garment)
-            output = runtime.generate(input_image=person, garment_image=garment,
-                                      category=record["category"])
-            result_key = f"llh-results/{job_id}.png"
-            storage.write(result_key, output)
-            record.update(status="completed", result_object_key=result_key,
-                          completed_at=str(int(time.time())))
-            redis.set(key, json.dumps(record), keepttl=True)
-        except Exception as exc:
-            # Exception text and user data are intentionally excluded from logs.
-            log.error("Generation failed job_id=%s error_type=%s", job_id, type(exc).__name__)
-            record.update(status="failed", error_code="generation_failed",
-                          completed_at=str(int(time.time())))
-            redis.set(key, json.dumps(record), keepttl=True)
+    stop = Event()
+
+    def heartbeat() -> None:
+        while not stop.is_set():
+            redis.setex("llh:worker:ready", 30, "1")
+            stop.wait(10)
+
+    Thread(target=heartbeat, daemon=True).start()
+    log.info("LLH GPU worker ready")
+    try:
+        while True:
+            item = redis.brpop("llh:jobs", timeout=5)
+            if item is None:
+                continue
+            _, job_id = item
+            key = f"llh:job:{job_id}"
+            raw = redis.get(key)
+            if not raw:
+                continue
+            record = json.loads(raw)
+            try:
+                record["status"] = "running"
+                redis.set(key, json.dumps(record), keepttl=True)
+                person = storage.read(record["input_object_key"])
+                garment = storage.read(record["garment_object_key"])
+                validate_image(person)
+                validate_image(garment)
+                output = runtime.generate(input_image=person, garment_image=garment,
+                                          category=record["category"])
+                result_key = f"llh-results/{job_id}.png"
+                storage.write(result_key, output)
+                record.update(status="completed", result_object_key=result_key,
+                              completed_at=str(int(time.time())))
+                redis.set(key, json.dumps(record), keepttl=True)
+            except Exception as exc:
+                log.error("Generation failed job_id=%s error_type=%s", job_id, type(exc).__name__)
+                record.update(status="failed", error_code="generation_failed",
+                              completed_at=str(int(time.time())))
+                redis.set(key, json.dumps(record), keepttl=True)
+    finally:
+        stop.set()
+        redis.delete("llh:worker:ready")
+        redis.close()
 
 if __name__ == "__main__":
     run()
