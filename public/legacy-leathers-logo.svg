@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 460" role="img" aria-labelledby="t d">
+<title id="t">Legacy Leathers, Since 1998</title><desc id="d">The Legacy Leathers LL monogram and wordmark on an embossed dark brown leather plaque in antique gold.</desc>
+<defs>
+ <linearGradient id="leather" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#68452d"/><stop offset=".42" stop-color="#3d2417"/><stop offset="1" stop-color="#1d100a"/></linearGradient>
+ <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f8e4b5"/><stop offset=".25" stop-color="#c99c54"/><stop offset=".52" stop-color="#f2d89c"/><stop offset=".76" stop-color="#9b6b36"/><stop offset="1" stop-color="#eed49a"/></linearGradient>
+ <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".72" numOctaves="3" seed="9" result="n"/><feColorMatrix in="n" type="saturate" values="0"/><feComponentTransfer><feFuncA type="table" tableValues="0 .17"/></feComponentTransfer><feBlend in="SourceGraphic" mode="soft-light"/></filter>
+ <filter id="emboss" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur in="SourceAlpha" stdDeviation="2.1" result="blur"/><feOffset in="blur" dx="1.8" dy="3" result="dark"/><feFlood flood-color="#090503" flood-opacity=".85"/><feComposite in2="dark" operator="in"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+ <linearGradient id="shine" x2="0" y2="1"><stop stop-color="#fff1cb" stop-opacity=".28"/><stop offset=".18" stop-color="#fff1cb" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".12"/></linearGradient>
+</defs>
+<rect x="9" y="9" width="582" height="442" rx="30" fill="#140b07" opacity=".5"/>
+<rect x="14" y="7" width="572" height="428" rx="28" fill="url(#leather)" stroke="url(#gold)" stroke-width="5"/>
+<rect x="25" y="18" width="550" height="406" rx="21" fill="none" stroke="#e4c58e" stroke-width="1.5" opacity=".88"/>
+<rect x="34" y="27" width="532" height="388" rx="16" fill="url(#shine)" filter="url(#grain)"/>
+<rect x="46" y="39" width="508" height="364" rx="11" fill="none" stroke="url(#gold)" stroke-width="2"/>
+<rect x="53" y="46" width="494" height="350" rx="8" fill="none" stroke="#8b643b" stroke-width="1" stroke-dasharray="2 5"/>
+<!-- Corner flourishes -->
+<g fill="none" stroke="url(#gold)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" filter="url(#emboss)">
+ <path d="M65 115 C48 87 67 57 99 61 C128 65 137 98 114 111 C94 123 77 106 87 91 C96 77 113 86 106 98"/>
+ <path d="M68 124 C90 145 113 141 125 124 C139 104 131 82 115 76"/>
+ <path d="M535 115 C552 87 533 57 501 61 C472 65 463 98 486 111 C506 123 523 106 513 91 C504 77 487 86 494 98"/>
+ <path d="M532 124 C510 145 487 141 475 124 C461 104 469 82 485 76"/>
+ <path d="M65 320 C48 348 67 378 99 374 C128 370 137 337 114 324 C94 312 77 329 87 344 C96 358 113 349 106 337"/>
+ <path d="M68 311 C90 290 113 294 125 311 C139 331 131 353 115 359"/>
+ <path d="M535 320 C552 348 533 378 501 374 C472 370 463 337 486 324 C506 312 523 329 513 344 C504 358 487 349 494 337"/>
+ <path d="M532 311 C510 290 487 294 475 311 C461 331 469 353 485 359"/>
+ <path d="M71 72 L125 72 M475 72 L529 72 M71 363 L125 363 M475 363 L529 363"/>
+</g>
+<g fill="url(#gold)" filter="url(#emboss)">
+ <path d="M70 49 l8 12 -8 12 -8 -12z"/><path d="M530 49 l8 12 -8 12 -8 -12z"/><path d="M70 374 l8 12 -8 12 -8 -12z"/><path d="M530 374 l8 12 -8 12 -8 -12z"/>
+</g>
+<text x="300" y="205" text-anchor="middle" font-family="Georgia,serif" font-size="151" font-weight="bold" letter-spacing="-15" fill="url(#gold)" stroke="#60391d" stroke-width="2" filter="url(#emboss)">LL</text>
+<path d="M180 220 H420" stroke="url(#gold)" stroke-width="1.6" opacity=".7"/>
+<text x="300" y="281" text-anchor="middle" font-family="Georgia,serif" font-size="53" letter-spacing="2.4" fill="url(#gold)" filter="url(#emboss)">LEGACY</text>
+<text x="300" y="331" text-anchor="middle" font-family="Georgia,serif" font-size="45" letter-spacing="6" fill="url(#gold)" filter="url(#emboss)">LEATHERS</text>
+<path d="M172 351 H428" stroke="url(#gold)" stroke-width="1.5"/>
+<text x="300" y="383" text-anchor="middle" font-family="Georgia,serif" font-style="italic" font-size="26" letter-spacing="1" fill="#f1d7a3">Since 1998</text>
+</svg>
