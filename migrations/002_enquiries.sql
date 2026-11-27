@@ -1,0 +1,1 @@
+CREATE TABLE IF NOT EXISTS atelier_enquiries (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), customer_name TEXT NOT NULL, phone TEXT NOT NULL, product_id UUID REFERENCES atelier_products(id), enquiry_type TEXT NOT NULL DEFAULT 'general', message TEXT, status TEXT NOT NULL DEFAULT 'new', created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());

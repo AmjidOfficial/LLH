@@ -1,0 +1,23 @@
+[auth]
+enabled = true
+providers = ["email"]
+
+[db.tables.commerce_carts]
+read = "own"
+write = "own"
+
+[db.tables.saas_memberships]
+read = "own"
+write = "own"
+
+[db.tables.tryon_sessions]
+read = "own"
+write = "own"
+
+[db.tables.tryon_guest_sessions]
+read = "public"
+write = "public"
+
+[db.tables.llh_avatar_sessions]
+read = "own"
+write = "own"
