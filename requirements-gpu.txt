@@ -1,0 +1,3 @@
+# Install inside a CUDA-compatible NVIDIA container with a matching PyTorch/CUDA build.
+# Upstream model source pinned to a reviewed commit, not a floating branch.
+fashn-vton @ git+https://github.com/fashn-AI/fashn-vton-1.5.git@7c0f10af3f91ad4048fe9729c470a13ef905d25a
