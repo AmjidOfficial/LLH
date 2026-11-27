@@ -1,37 +1,31 @@
-# Local FASHN VTON model setup
+# Model selection and commercial licence review
 
-The first inference baseline is the self-hosted FASHN VTON v1.5 package. It runs in our GPU worker, not through the FASHN API.
+## Decision: FASHN VTON v1.5 is blocked for LLH commercial use in its current dependency chain
 
-Upstream source is pinned in `Dockerfile.gpu` to commit `7c0f10af3f91ad4048fe9729c470a13ef905d25a`. Review that commit and all transitive dependency licences before production use.
+The FASHN VTON v1.5 repository is published under Apache 2.0. However, its inference pipeline imports `fashn-human-parser` as a required dependency. The parser's own README points to the NVIDIA Source Code License for SegFormer. Section 3.3 limits the parser work and derivatives to non-commercial research/evaluation use. That conflicts with LLH's commercial customer try-on service.
 
-## Build and download weights
+Sources:
+- [FASHN VTON v1.5 pipeline](https://github.com/fashn-AI/fashn-vton-1.5/blob/main/src/fashn_vton/pipeline.py)
+- [FASHN Human Parser licence notice](https://github.com/fashn-AI/fashn-human-parser)
+- [NVIDIA SegFormer licence, section 3.3](https://github.com/NVlabs/SegFormer/blob/master/LICENSE)
 
-1. Prepare a Linux GPU host with Docker, NVIDIA drivers and NVIDIA Container Toolkit.
-2. Set the private object-storage and Redis values in the host's secret environment.
-3. Build the worker image:
+Do not download or deploy the FASHN Human Parser weights for LLH commercial use unless LLH obtains written commercial rights or replaces the parser with a separately licensed, compatible implementation and validates the changed pipeline. The FASHN adapter in this branch is experimental only and must not be enabled for production.
 
-```bash
-docker compose build worker
-```
+## Next commercial-safe candidate: Qwen-Image-Edit-2511
 
-4. Download model weights into the private persistent volume. This is a one-time download, not an API call:
+The official Hugging Face model card lists Apache 2.0. It supports image editing and multi-reference editing, which makes it a candidate for an LLH-specific outfit editing prototype.
 
-```bash
-docker compose run --rm --entrypoint python worker /opt/fashn-vton/scripts/download_weights.py --weights-dir /srv/llh/weights
-```
+- Model: https://huggingface.co/Qwen/Qwen-Image-Edit-2511
+- Licence shown by the model card: Apache 2.0.
+- This is a general image-editing model, not a purpose-built virtual try-on model.
+- It may alter garment details, logos, seams, pockets, texture, colour or identity. It must pass a product-fidelity benchmark before customer use.
+- The model is large. Rent a suitable GPU only after confirming VRAM, memory-offload behaviour and per-image cost in a small benchmark.
+- Review the exact model revision, tokenizer, VAE, libraries and all downloaded weights before commercial deployment.
 
-5. Start services:
+## Other candidate
 
-```bash
-docker compose up -d
-```
+FLUX.2 Klein 4B lists Apache 2.0 for the 4B model, but its model card also refers commercial self-hosted users to additional BFL terms and policies. Do not select it until those terms are reviewed.
 
-The worker loads `TryOnPipeline(weights_dir=...)`. Its Redis heartbeat makes the API readiness endpoint return ready only while the worker is healthy.
+## Acceptance gate
 
-## Model limits
-
-The model supports `tops`, `bottoms`, and `one-pieces`. It accepts a person photo and a garment photo and returns one or more generated images. The first integration uses one output image.
-
-It does not natively place belts, bags, shoes or multiple separate garments in one pass. Those require a separate accessory pipeline or a multi-pass outfit compositor with their own quality tests. Do not claim those flows are ready based on this adapter alone.
-
-The upstream project documents approximately 8 GB VRAM for inference and 576×864 output. Actual VRAM and speed depend on driver, CUDA, input image and concurrent load. Benchmark on the selected GPU before setting customer-facing limits.
+No model is approved merely because its main repository says Apache 2.0. Review all runtime dependencies, checkpoints, datasets, base models and training assets. Keep a bill of materials with exact revisions and licence copies. The product must preserve actual LLH SKU attributes and show that the preview is AI-generated, not a guaranteed fit or an exact physical rendering.
