@@ -62,27 +62,38 @@ async def submit_job(request: Request) -> JobAccepted:
         payload = JobCreate.model_validate_json(raw)
     except Exception:
         raise HTTPException(status_code=422, detail="Invalid job request") from None
-    existing = await redis.get(f"llh:job:{payload.job_id}")
-    if existing:
-        return JobAccepted(job_id=payload.job_id, status="already_exists",
-                           message="Existing job retained; no second generation queued")
-    if await redis.llen("llh:jobs") >= settings.max_queue_depth:
+    queue_key = "llh:jobs"
+    if await redis.llen(queue_key) >= settings.max_queue_depth:
         raise HTTPException(status_code=429, detail="Generation queue is full")
+    job_key = f"llh:job:{payload.job_id}"
     record = {"job_id": payload.job_id, "idempotency_key": payload.idempotency_key,
               "input_object_key": payload.input_object_key,
               "garment_object_key": payload.garment_object_key, "category": payload.category,
               "callback_path": payload.callback_path, "status": "queued",
               "created_at": str(int(time.time()))}
-    created = await redis.set(f"llh:job:{payload.job_id}", json.dumps(record),
-                              ex=settings.job_ttl_seconds, nx=True)
-    if not created:
-        return JobAccepted(job_id=payload.job_id, status="already_exists",
-                           message="Duplicate job ignored")
-    await redis.rpush("llh:jobs", payload.job_id)
+    # One Redis Lua transaction makes idempotency, job creation and enqueue atomic.
+    script = """
+    local existing = redis.call('GET', KEYS[1])
+    if existing then return {0, existing} end
+    if redis.call('EXISTS', KEYS[2]) == 1 then return {0, ARGV[1]} end
+    if redis.call('LLEN', KEYS[3]) >= tonumber(ARGV[3]) then return {-1, ''} end
+    redis.call('SET', KEYS[1], ARGV[1], 'EX', ARGV[4])
+    redis.call('SET', KEYS[2], ARGV[2], 'EX', ARGV[4])
+    redis.call('RPUSH', KEYS[3], ARGV[1])
+    return {1, ARGV[1]}
+    """
+    outcome = await redis.eval(script, 3, f"llh:idem:{payload.idempotency_key}",
+                               job_key, queue_key, payload.job_id, json.dumps(record),
+                               settings.max_queue_depth, settings.job_ttl_seconds)
+    if int(outcome[0]) == -1:
+        raise HTTPException(status_code=429, detail="Generation queue is full")
+    if int(outcome[0]) == 0:
+        return JobAccepted(job_id=str(outcome[1]), status="already_exists",
+                           message="Duplicate request ignored; original job retained")
     return JobAccepted(job_id=payload.job_id, status="queued", message="Job accepted")
 
 @app.get("/v1/jobs/{job_id}")
-async def get_job(job_id: str, request: Request) -> dict[str, str]:
+async def get_job(job_id: str, request: Request) -> dict[str, str | None]:
     await verify_internal_request(request)
     if redis is None:
         raise HTTPException(status_code=503, detail="Job queue is unavailable")
@@ -90,4 +101,6 @@ async def get_job(job_id: str, request: Request) -> dict[str, str]:
     if not record:
         raise HTTPException(status_code=404, detail="Job not found")
     data = json.loads(record)
-    return {"job_id": data["job_id"], "status": data["status"]}
+    return {"job_id": data["job_id"], "status": data["status"],
+            "result_object_key": data.get("result_object_key"),
+            "error_code": data.get("error_code")}
