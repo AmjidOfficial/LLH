@@ -1,0 +1,1 @@
+ALTER TABLE llh_avatar_sessions ADD COLUMN IF NOT EXISTS body_image_id text;
