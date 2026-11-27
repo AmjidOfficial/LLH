@@ -57,9 +57,8 @@ def run() -> None:
                           completed_at=str(int(time.time())))
             redis.set(key, json.dumps(record), keepttl=True)
         except Exception as exc:
-            # Do not log exception text: it may contain paths or user-controlled data.
-            log.exception("Generation failed for job id %s", job_id,
-                          extra={"error_type": type(exc).__name__})
+            # Exception text and user data are intentionally excluded from logs.
+            log.error("Generation failed job_id=%s error_type=%s", job_id, type(exc).__name__)
             record.update(status="failed", error_code="generation_failed",
                           completed_at=str(int(time.time())))
             redis.set(key, json.dumps(record), keepttl=True)
