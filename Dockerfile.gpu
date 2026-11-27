@@ -1,0 +1,8 @@
+FROM pytorch/pytorch:2.5.1-cuda12.4-cudnn9-runtime
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1
+WORKDIR /srv/llh
+COPY pyproject.toml README.md ./
+COPY app ./app
+RUN pip install --upgrade pip && pip install .
+ENV FASHN_WEIGHTS_DIR=/srv/llh/weights
+CMD ["python", "-m", "app.worker"]
