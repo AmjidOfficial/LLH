@@ -2,17 +2,18 @@ from io import BytesIO
 from pathlib import Path
 from PIL import Image
 from fashn_vton import TryOnPipeline
+from app.config import get_settings
 
 class FashnRuntime:
     """Local FASHN VTON v1.5 inference adapter. No remote API calls."""
     def __init__(self) -> None:
         self.pipeline = None
-        self.weights_dir = Path("weights")
 
     def load(self) -> None:
-        if not self.weights_dir.exists():
+        weights = Path(get_settings().fashn_weights_dir)
+        if not weights.exists():
             raise RuntimeError("Model weights directory is missing")
-        self.pipeline = TryOnPipeline(weights_dir=str(self.weights_dir))
+        self.pipeline = TryOnPipeline(weights_dir=str(weights))
 
     def is_ready(self) -> bool:
         return self.pipeline is not None
