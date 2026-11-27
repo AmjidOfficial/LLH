@@ -18,13 +18,11 @@ services:
     cap_drop: [ALL]
 
   worker:
+    profiles: ["gpu"]
     build:
       context: .
       dockerfile: Dockerfile.gpu
     env_file: .env
-    environment:
-      LLH_VTON_RUNTIME_MODULE: app.fashn_runtime:FashnRuntime
-      FASHN_WEIGHTS_DIR: /srv/llh/weights
     volumes:
       - model_weights:/srv/llh/weights
     gpus: all
