@@ -6,7 +6,7 @@ class RuntimeNotReady(RuntimeError):
     pass
 
 class VtonRuntime:
-    """Fail-closed adapter. A pinned, audited local model adapter must implement this contract."""
+    """Fail-closed adapter for a pinned local model runtime."""
     def __init__(self) -> None:
         self._runtime: Any | None = None
 
@@ -30,3 +30,9 @@ class VtonRuntime:
     @property
     def is_ready(self) -> bool:
         return self._runtime is not None
+
+    def generate(self, *, input_image: bytes, garment_image: bytes, category: str) -> bytes:
+        if self._runtime is None:
+            raise RuntimeNotReady("Local VTON runtime is not loaded")
+        return self._runtime.generate(input_image=input_image,
+                                      garment_image=garment_image, category=category)
