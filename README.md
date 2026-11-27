@@ -27,3 +27,8 @@
 - LLH is currently a single-business store. OpenFit Room is a separate future product concept, not a multi-tenant conversion of this store.
 
 See [the full project source of truth](docs/LLH_PROJECT_SOURCE_OF_TRUTH.md) for requirements, verified system status, admin modules, and the self-hosted AI try-on plan.
+
+
+## Source snapshot
+
+A read-only source snapshot of the current Hatchable v57 text files is available on branch [`hatchable-v57-source-sync`](https://github.com/AmjidOfficial/LLH/tree/hatchable-v57-source-sync). It includes the backend, migrations, frontend and text-based catalogue assets. Three archived demo JPG files and the generated platform-only AGENTS.md were excluded. **Do not merge this branch into public main yet:** migration `007_platform_super_admins.sql` contains two administrator email seed values. Make the repository private or sanitize that migration before merging. No production Hatchable files were changed by this snapshot.
