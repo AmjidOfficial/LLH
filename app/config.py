@@ -10,7 +10,13 @@ class Settings(BaseSettings):
     llh_engine_shared_secret: str = ""
     llh_engine_allowed_callback_hosts: str = "top-fashion-leather.hatchable.site"
     llh_vton_runtime_module: str = ""
+    fashn_weights_dir: str = "./weights"
     redis_url: str = "redis://localhost:6379/0"
+    storage_bucket: str = ""
+    storage_endpoint_url: str = ""
+    storage_region: str = "auto"
+    storage_access_key: str = ""
+    storage_secret_key: str = ""
     max_queue_depth: int = Field(default=8, ge=1, le=64)
     job_ttl_seconds: int = Field(default=3600, ge=60, le=86400)
     max_image_pixels: int = Field(default=24_000_000, ge=1_000_000)
