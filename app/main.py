@@ -5,7 +5,6 @@ from fastapi import FastAPI, HTTPException, Request
 from redis.asyncio import Redis
 from redis.exceptions import RedisError
 from app.config import get_settings
-from app.runtime import RuntimeNotReady, VtonRuntime
 from app.schemas import JobAccepted, JobCreate
 from app.security import verify_internal_request
 
@@ -13,7 +12,6 @@ settings = get_settings()
 logging.basicConfig(level=settings.log_level, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 logger = logging.getLogger("llh.engine")
 app = FastAPI(title=settings.app_name, version="0.1.0", docs_url=None, redoc_url=None)
-runtime = VtonRuntime()
 redis: Redis | None = None
 
 @app.on_event("startup")
@@ -24,10 +22,6 @@ async def startup() -> None:
         await redis.ping()
     except RedisError:
         logger.error("Redis unavailable at startup")
-    try:
-        runtime.load()
-    except RuntimeNotReady:
-        logger.warning("VTON runtime not configured; generation disabled")
 
 @app.on_event("shutdown")
 async def shutdown() -> None:
@@ -41,37 +35,36 @@ async def live() -> dict[str, str]:
 @app.get("/health/ready")
 async def ready() -> dict[str, object]:
     redis_ok = False
+    worker_ok = False
     if redis is not None:
         try:
             redis_ok = bool(await redis.ping())
+            worker_ok = bool(await redis.exists("llh:worker:ready"))
         except RedisError:
             redis_ok = False
-    is_ready = redis_ok and runtime.is_ready
+    is_ready = redis_ok and worker_ok
     return {"status": "ready" if is_ready else "not_ready",
             "queue": "ready" if redis_ok else "unavailable",
-            "model": "ready" if runtime.is_ready else "not_configured"}
+            "model_worker": "ready" if worker_ok else "not_ready"}
 
 @app.post("/v1/jobs", response_model=JobAccepted, status_code=202)
 async def submit_job(request: Request) -> JobAccepted:
     raw = await verify_internal_request(request)
-    if not runtime.is_ready:
-        raise HTTPException(status_code=503, detail="Local AI model is not ready")
     if redis is None:
         raise HTTPException(status_code=503, detail="Job queue is unavailable")
+    if not await redis.exists("llh:worker:ready"):
+        raise HTTPException(status_code=503, detail="Local AI worker is not ready")
     try:
         payload = JobCreate.model_validate_json(raw)
     except Exception:
         raise HTTPException(status_code=422, detail="Invalid job request") from None
     queue_key = "llh:jobs"
-    if await redis.llen(queue_key) >= settings.max_queue_depth:
-        raise HTTPException(status_code=429, detail="Generation queue is full")
     job_key = f"llh:job:{payload.job_id}"
     record = {"job_id": payload.job_id, "idempotency_key": payload.idempotency_key,
               "input_object_key": payload.input_object_key,
               "garment_object_key": payload.garment_object_key, "category": payload.category,
               "callback_path": payload.callback_path, "status": "queued",
               "created_at": str(int(time.time()))}
-    # One Redis Lua transaction makes idempotency, job creation and enqueue atomic.
     script = """
     local existing = redis.call('GET', KEYS[1])
     if existing then return {0, existing} end
